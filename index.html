@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UPCES - Scorer Terminal Portal</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d1117">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Scorer App">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-canvas: #f3f4f6;
+            --card-surface: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --xm-vivid-blue: #0076bc;
+            --xm-light-purple: #704ba0;
+            --obsidian: #0d1117;
+            --border-light: #e2e8f0;
+            --gradient-xm: linear-gradient(135deg, var(--xm-vivid-blue), var(--xm-light-purple));
+            
+            --forest-green: #1e4620;
+            --deep-dark-red: #7f1d1d;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body { 
+            background-color: var(--bg-canvas); 
+            color: var(--text-dark); 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
+            overflow-x: hidden; 
+        }
+
+        /* --- ENTRANCE ANIMATION LAYER --- */
+        #entrance-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #ffffff;
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .netflix-title-clone {
+            background: var(--gradient-xm);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 64px; font-weight: 800; letter-spacing: 2px;
+            text-transform: uppercase; transform: scale(0.5); opacity: 0;
+            animation: netflixCinematic 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        .footer-brand-tag { position: absolute; bottom: 35px; font-size: 11px; color: var(--obsidian); font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; opacity: 0.8; }
+        
+        @keyframes netflixCinematic {
+            0% { transform: scale(0.6); opacity: 0; filter: blur(6px); }
+            35% { transform: scale(1.02); opacity: 1; filter: blur(0px); }
+            65% { transform: scale(1.05); opacity: 1; filter: blur(0px); }
+            100% { transform: scale(1.35); opacity: 0; filter: blur(12px); }
+        }
+
+        /* --- GATEWAY FRAME --- */
+        #gateway-screen { display: none; width: 100%; max-width: 490px; text-align: center; }
+        .qualtrics-card-clone {
+            background: var(--card-surface); padding: 50px 45px; border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); border: 1px solid rgba(0,0,0,0.06); text-align: left; margin-bottom: 35px;
+        }
+        .brand-logo-container { margin-bottom: 40px; display: flex; align-items: baseline; justify-content: flex-start; }
+        .brand-logo-main { font-size: 46px; font-weight: 800; color: #000000; letter-spacing: -1.5px; text-transform: lowercase; }
+        .brand-logo-sub { 
+            font-size: 22px; font-weight: 800; 
+            background: var(--gradient-xm);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-left: 2px; text-transform: uppercase;
+        }
+        .input-wrapper { position: relative; margin-bottom: 20px; }
+        .input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; opacity: 0.35; }
+        .qualtrics-input {
+            width: 100%; padding: 15px 15px 15px 48px; border: 1px solid #bcbcbc; border-radius: 4px;
+            font-size: 16px; color: #000000; outline: none; transition: all 0.2s ease-in-out; background: #ffffff;
+        }
+        .qualtrics-input:focus { 
+            border-color: var(--xm-vivid-blue); 
+            box-shadow: 0 0 10px rgba(0, 118, 188, 0.45), 0 0 0 2px rgba(112, 75, 160, 0.2); 
+        }
+        .qualtrics-btn-blue {
+            width: 100%; padding: 15px; background-color: var(--xm-vivid-blue); color: #ffffff; border: none;
+            font-size: 16px; font-weight: 600; border-radius: 4px; cursor: pointer; margin-top: 10px; transition: background 0.15s;
+        }
+        .qualtrics-btn-blue:hover { background-color: #005f96; }
+        .security-notice-text { font-size: 14px; color: var(--text-muted); text-align: center; line-height: 1.6; margin-top: 25px; padding: 0 10px; }
+
+        /* --- HIGH-FIDELITY MAIN INTERFACE --- */
+        #main-scoring-panel { 
+            display: none; width: 100%; max-width: 800px; background: var(--card-surface); 
+            border-radius: 24px; padding: 50px; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 40px rgba(0, 118, 188, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.8); 
+            position: relative;
+        }
+        
+        .welcome-banner {
+            background: var(--gradient-xm); padding: 30px; border-radius: 16px; color: #ffffff;
+            margin-bottom: 35px; box-shadow: 0 10px 20px rgba(0, 118, 188, 0.2);
+        }
+        .welcome-banner h2 { font-size: 26px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.5px; }
+        .welcome-banner p { font-size: 14px; opacity: 0.9; font-weight: 500; }
+
+        .session-badge-row { display: flex; gap: 16px; margin-bottom: 40px; }
+        .meta-pill {
+            flex: 1; background: #f8fafc; border: 1px solid var(--border-light); 
+            padding: 16px; border-radius: 12px; font-size: 14px; color: var(--text-muted);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .meta-pill strong { display: block; color: var(--obsidian); font-size: 18px; margin-top: 4px; font-weight: 700; }
+
+        .tier-group-container { margin-bottom: 40px; }
+        .tier-group-title { 
+            font-size: 14px; font-weight: 800; text-transform: uppercase; 
+            margin-bottom: 18px; letter-spacing: 1px; color: var(--text-muted);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tier-group-title::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+        
+        .scoring-item-card { 
+            display: flex; align-items: center; justify-content: space-between; 
+            background: #ffffff; padding: 18px 24px; border-radius: 14px; 
+            margin-bottom: 14px; border: 1px solid var(--border-light);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .scoring-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border-color: #cbd5e1;
+        }
+        .item-identity { font-size: 16px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 14px; }
+        
+        .indicator-dot-blue { 
+            width: 10px; height: 10px; background-color: var(--xm-vivid-blue); 
+            border-radius: 50%; display: inline-block;
+            box-shadow: 0 0 0 4px rgba(0, 118, 188, 0.2);
+        }
+        .selector-button-row { display: flex; background: #f1f5f9; padding: 4px; border-radius: 10px; gap: 4px; }
+        
+        .toggle-choice-btn { 
+            background: transparent; border: none; color: var(--text-muted); 
+            padding: 10px 22px; font-size: 13px; font-weight: 700; border-radius: 8px; 
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .toggle-choice-btn:hover { color: var(--text-dark); background: rgba(255,255,255,0.6); }
+        
+        .toggle-choice-btn.active-correct { background: var(--forest-green) !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(30, 70, 32, 0.35); }
+        .toggle-choice-btn.active-wrong { background: var(--deep-dark-red) !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(127, 29, 29, 0.35); }
+        .toggle-choice-btn.active-unanswered { background: var(--obsidian) !important; color: #ffffff !important; box-shadow: 0 4px 12px rgba(13, 17, 23, 0.35); }
+        
+        .master-submit-btn { 
+            width: 100%; padding: 18px; font-size: 16px; 
+            background-image: var(--gradient-xm); color: white; border: none; 
+            font-weight: 700; border-radius: 14px; cursor: pointer; 
+            text-transform: uppercase; letter-spacing: 0.5px; margin-top: 20px; 
+            box-shadow: 0 8px 20px rgba(112, 75, 160, 0.25);
+            transition: opacity 0.2s ease, transform 0.1s ease;
+        }
+        .master-submit-btn:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            #main-scoring-panel { padding: 20px; border-radius: 16px; }
+            .scoring-item-card { flex-direction: column; gap: 12px; align-items: flex-start; padding: 16px; }
+            .selector-button-row { width: 100%; justify-content: space-between; }
+            .toggle-choice-btn { flex: 1; text-align: center; padding: 10px 0; }
+            .session-badge-row { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="entrance-screen">
+        <div class="netflix-title-clone">UPCES</div>
+        <div class="footer-brand-tag">powered by APPerin</div>
+    </div>
+
+    <div id="gateway-screen">
+        <div class="qualtrics-card-clone">
+            <div class="brand-logo-container">
+                <span class="brand-logo-main">scorer</span><span class="brand-logo-sub">app</span>
+            </div>
+            
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <input type="text" id="teamField" class="qualtrics-input" placeholder="Team Name">
+            </div>
+            
+            <div class="input-wrapper">
+                <svg class="input-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                <input type="text" id="scorerField" class="qualtrics-input" placeholder="Name of Scorer">
+            </div>
+            
+            <button class="qualtrics-btn-blue" onclick="processPortalValidation()">Proceed</button>
+        </div>
+        <div class="security-notice-text">If you are not scorer do not try to access this app. Thank you.</div>
+    </div>
+
+    <div id="main-scoring-panel">
+        <div class="welcome-banner">
+            <h2>Welcome to the Scorer App Interface</h2>
+            <p>UPCES Evaluation Terminal Engine • Realtime Cloud Sync Active</p>
+        </div>
+
+        <div class="session-badge-row">
+            <div class="meta-pill">Target Evaluation Unit <strong id="viewTeam">N/A</strong></div>
+            <div class="meta-pill">Active Registry Marshal <strong id="viewScorer">N/A</strong></div>
+        </div>
+
+        <div class="tier-group-container"><div class="tier-group-title">Easy Division</div><div id="boxEasy"></div></div>
+        <div class="tier-group-container"><div class="tier-group-title">Average Division</div><div id="boxAverage"></div></div>
+        <div class="tier-group-container"><div class="tier-group-title">Difficult Division</div><div id="boxDifficult"></div></div>
+
+        <button class="master-submit-btn" onclick="triggerPDFDownload()">Generate Document Summary Report</button>
+    </div>
+
+    <script>
+        const CLOUD_TARGET_URL = "https://lomhji-default-rtdb.asia-southeast1.firebasedatabase.app";
+        let activeScopeId = "";
+        let verifiedScorerName = "";
+        
+        let trackingStateMatrix = {
+            easy: { item1: "unanswered", item2: "unanswered", item3: "unanswered", item4: "unanswered", item5: "unanswered" },
+            average: { item1: "unanswered", item2: "unanswered", item3: "unanswered", item4: "unanswered", item5: "unanswered" },
+            difficult: { item1: "unanswered", item2: "unanswered", item3: "unanswered", item4: "unanswered", item5: "unanswered" }
+        };
+
+        const scoreWeights = {
+            easy: { correct: 2, wrong: -2, unanswered: 0 },
+            average: { correct: 10, wrong: -5, unanswered: -2 },
+            difficult: { correct: 25, wrong: -10, unanswered: -5 }
+        };
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const entrance = document.getElementById('entrance-screen');
+                const gateway = document.getElementById('gateway-screen');
+                if (entrance) entrance.style.display = 'none';
+                if (gateway) gateway.style.display = 'block';
+            }, 3500);
+            
+            try { assembleMatrixDOMs(); } catch(e) { console.error(e); }
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
+            });
+        }
+
+        function assembleMatrixDOMs() {
+            populateSectorLayout("easy", document.getElementById("boxEasy"));
+            populateSectorLayout("average", document.getElementById("boxAverage"));
+            populateSectorLayout("difficult", document.getElementById("boxDifficult"));
+        }
+
+        function populateSectorLayout(tierId, targetWrapper) {
+            let DOMBuffer = "";
+            for(let i = 1; i <= 5; i++) {
+                DOMBuffer += `
+                    <div class="scoring-item-card">
+                        <div class="item-identity"><span class="indicator-dot-blue"></span>Item 0${i}</div>
+                        <div class="selector-button-row">
+                            <button class="toggle-choice-btn" id="${tierId}-i${i}-correct" onclick="mutateItemStatus('${tierId}', 'item${i}', 'correct')">Correct</button>
+                            <button class="toggle-choice-btn" id="${tierId}-i${i}-wrong" onclick="mutateItemStatus('${tierId}', 'item${i}', 'wrong')">Wrong</button>
+                            <button class="toggle-choice-btn" id="${tierId}-i${i}-unanswered" onclick="mutateItemStatus('${tierId}', 'item${i}', 'unanswered')">No Ans</button>
+                        </div>
+                    </div>`;
+            }
+            targetWrapper.innerHTML = DOMBuffer;
+        }
+
+        async function processPortalValidation() {
+            const teamVal = document.getElementById("teamField").value.trim();
+            const scorerVal = document.getElementById("scorerField").value.trim();
+
+            if(!teamVal || !scorerVal) return alert("Please fill out both validation fields to proceed.");
+
+            activeScopeId = teamVal.replace(/[\.#\$\[\]]/g, "-");
+            verifiedScorerName = scorerVal;
+
+            document.getElementById("viewTeam").innerText = teamVal;
+            document.getElementById("viewScorer").innerText = verifiedScorerName;
+
+            try {
+                const streamResponse = await fetch(`${CLOUD_TARGET_URL}/competition_teams/${activeScopeId}.json`);
+                const nodePayload = await streamResponse.json();
+                if(nodePayload && nodePayload.matrix) {
+                    trackingStateMatrix = nodePayload.matrix;
+                } else {
+                    await synchronizeCloudStore();
+                }
+                syncUIVisualStates();
+            } catch(ex) { console.error(ex); }
+
+            document.getElementById("gateway-screen").style.display = 'none';
+            document.getElementById("main-scoring-panel").style.display = 'block';
+        }
+
+        function mutateItemStatus(tierId, itemKey, stateString) {
+            trackingStateMatrix[tierId][itemKey] = stateString;
+            syncUIVisualStates();
+            synchronizeCloudStore();
+        }
+
+        function syncUIVisualStates() {
+            ["easy", "average", "difficult"].forEach(tier => {
+                for(let i = 1; i <= 5; i++) {
+                    const innerTargetState = trackingStateMatrix[tier][`item${i}`];
+                    
+                    const btnCorrect = document.getElementById(`${tier}-i${i}-correct`);
+                    const btnWrong = document.getElementById(`${tier}-i${i}-wrong`);
+                    const btnUnanswered = document.getElementById(`${tier}-i${i}-unanswered`);
+
+                    btnCorrect.classList.remove("active-correct");
+                    btnWrong.classList.remove("active-wrong");
+                    btnUnanswered.classList.remove("active-unanswered");
+
+                    if (innerTargetState === "correct") btnCorrect.classList.add("active-correct");
+                    if (innerTargetState === "wrong") btnWrong.classList.add("active-wrong");
+                    if (innerTargetState === "unanswered") btnUnanswered.classList.add("active-unanswered");
+                }
+            });
+        }
+
+        function processCalculatedMetrics() {
+            let accumulatedPoints = 0;
+            let metaBreakdown = { easy: {c:0, w:0, n:0}, average: {c:0, w:0, n:0}, difficult: {c:0, w:0, n:0} };
+
+            ["easy", "average", "difficult"].forEach(tier => {
+                for(let i = 1; i <= 5; i++) {
+                    const state = trackingStateMatrix[tier][`item${i}`];
+                    accumulatedPoints += scoreWeights[tier][state];
+                    if(state === 'correct') metaBreakdown[tier].c++;
+                    if(state === 'wrong') metaBreakdown[tier].w++;
+                    if(state === 'unanswered') metaBreakdown[tier].n++;
+                }
+            });
+            return { accumulatedPoints, metaBreakdown };
+        }
+
+        async function synchronizeCloudStore() {
+            if(!activeScopeId) return;
+            const computed = processCalculatedMetrics();
+            const transportPayload = {
+                teamName: document.getElementById("teamField").value.trim(),
+                scorerName: verifiedScorerName,
+                totalScore: computed.accumulatedPoints,
+                breakdown: computed.metaBreakdown,
+                matrix: trackingStateMatrix
+            };
+            await fetch(`${CLOUD_TARGET_URL}/competition_teams/${activeScopeId}.json`, {
+                method: "PUT",
+                body: JSON.stringify(transportPayload)
+            });
+        }
+
+        function triggerPDFDownload() {
+            const { jsPDF } = window.jspdf;
+            const documentReport = new jsPDF();
+            const computed = processCalculatedMetrics();
+            const rawNameString = document.getElementById("teamField").value.trim();
+
+            documentReport.setFont("Helvetica", "bold");
+            documentReport.setFontSize(20);
+            documentReport.text("OFFICIAL COMPETITION TALLY CARD", 20, 25);
+            documentReport.line(20, 28, 190, 28);
+            documentReport.setFontSize(13);
+            documentReport.text("Team Assignment: " + rawNameString, 20, 42);
+            documentReport.text("Logged Scorer Marshal: " + verifiedScorerName, 20, 50);
+            documentReport.text("Aggregated Score Yield: " + computed.accumulatedPoints + " pts", 20, 58);
+            documentReport.save("Score_Tally_" + rawNameString + ".pdf");
+        }
+    </script>
+</body>
+</html>
