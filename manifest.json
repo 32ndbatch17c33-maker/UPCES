@@ -1,25 +1,21 @@
 {
-  "name": "UPCES Scorer Terminal",
-  "short_name": "Scorer App",
-  "description": "Premium evaluation engine for the UPCES tournament workspace.",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117",
-  "orientation": "portrait-primary",
-  "prefer_related_applications": false,
+  "short_name": "UPCES Engine",
+  "name": "UPCES Master Scoring Hub Engine",
   "icons": [
     {
       "src": "icon-192.png",
-      "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "192x192"
     },
     {
       "src": "icon-512.png",
-      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": "index.html",
+  "background_color": "#090d16",
+  "theme-color": "#0284c7",
+  "display": "standalone",
+  "orientation": "portrait"
 }
