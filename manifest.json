@@ -1,21 +1,24 @@
 {
-  "short_name": "UPCES Engine",
-  "name": "UPCES Master Scoring Hub Engine",
+  "name": "UPCES Competition Management System",
+  "short_name": "UPCES",
+  "description": "Premium Server Core Hub & Scorer Terminal Suite for UPCES.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0f1d",
+  "theme_color": "#0a0f1d",
+  "orientation": "any",
   "icons": [
     {
       "src": "icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
-      "sizes": "192x192"
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "sizes": "512x512"
+      "purpose": "any maskable"
     }
-  ],
-  "start_url": "index.html",
-  "background_color": "#090d16",
-  "theme-color": "#0284c7",
-  "display": "standalone",
-  "orientation": "portrait"
+  ]
 }
